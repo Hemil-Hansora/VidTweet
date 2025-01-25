@@ -1,7 +1,7 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/apiError.js";
 import { User } from "../models/user.model.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { deleteOnCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import { z } from "zod";
 import jwt from "jsonwebtoken";
@@ -318,6 +318,10 @@ const updateUserAvatar = asyncHandler(async (req,res)=>{
         throw new ApiError(400,"Error while uploading Avatar")
     }
 
+
+
+    const oldAvatarPath = req.user?.avatar
+
     const user = await User.findByIdAndUpdate(
         req.user?._id,
         {
@@ -327,6 +331,8 @@ const updateUserAvatar = asyncHandler(async (req,res)=>{
         },
         {new:true}
     ).select("-password -refreshToken")
+
+     await deleteOnCloudinary(oldAvatarPath);
 
     return res
     .status(200)
@@ -348,6 +354,8 @@ const updateUserCoverImg = asyncHandler(async (req,res)=>{
         throw new ApiError(400,"Error while uploading Cover Image")
     }
 
+    const oldCoverImgPath = req.user?.coverImage
+
     const user = await User.findByIdAndUpdate(
         req.user?._id,
         {
@@ -357,6 +365,8 @@ const updateUserCoverImg = asyncHandler(async (req,res)=>{
         },
         {new:true}
     ).select("-password -refreshToken")
+
+    await deleteOnCloudinary(oldCoverImgPath)
 
     return res
     .status(200)
