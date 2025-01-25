@@ -1,8 +1,11 @@
 import { Router } from "express";
-import { registerUser } from "../controllers/user.controller.js";
+import { registerUser,loginUser, logoutUser } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middlewares.js";
+import { verifyJWT } from "../middlewares/auth.middlewares.js";
+import multer from "multer";
 
 const router = Router()
+const formParser = multer().none();
 
 router.route('/register').post(
     upload.fields([
@@ -17,5 +20,11 @@ router.route('/register').post(
     ]),
     registerUser
 )
+
+
+router.route('/login').post(formParser,loginUser)
+
+//secured routes
+router.route('/logout').post(verifyJWT,logoutUser)
 
 export default router;
