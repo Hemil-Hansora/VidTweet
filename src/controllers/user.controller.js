@@ -16,7 +16,7 @@ const registerUser = asyncHandler(async (req, res) => {
     const validationResult = registerSchema.safeParse(req.body);
 
     if (!validationResult.success) {
-        const errorMessages = validationResult.error.errors.map((err) => err.message);
+        const errorMessages = validationResult.error.errors.map((err) => `${err.path[0]}: ${err.message}`);
         throw new ApiError(400, errorMessages.join(", "));
     }
 
@@ -48,6 +48,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
     const user = await User.create({
         fullName,
+        email,
         username: username.toLowerCase(),
         password,
         avatar: avatar.url,
