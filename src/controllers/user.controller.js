@@ -317,7 +317,7 @@ const updateUserAvatar = asyncHandler(async (req,res)=>{
     if(!avatar){
         throw new ApiError(400,"Error while uploading Avatar")
     }
-    console.log("in update Avatar")
+
     const user = await User.findByIdAndUpdate(
         req.user?._id,
         {
@@ -327,7 +327,7 @@ const updateUserAvatar = asyncHandler(async (req,res)=>{
         },
         {new:true}
     ).select("-password -refreshToken")
-    console.log("in update Avatar")
+
     return res
     .status(200)
     .json(
