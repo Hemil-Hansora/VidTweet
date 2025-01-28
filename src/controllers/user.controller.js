@@ -5,6 +5,7 @@ import { deleteOnCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import { z } from "zod";
 import jwt from "jsonwebtoken";
+import { subscribe } from "diagnostics_channel";
 
 const registerSchema = z.object({
     fullName: z.string().trim().min(1, "Full name is required"),
@@ -376,5 +377,77 @@ const updateUserCoverImg = asyncHandler(async (req,res)=>{
     
 })
 
+const getUserChannelProfile = asyncHandler(async (req,res)=>{
+    const {username} = req.params 
 
-export { registerUser, loginUser, logoutUser,refreshAccessToken ,changePassword,getCurrentUser,updateAccountDetails,updateUserAvatar,updateUserCoverImg};
+    if(!username?.trim()){
+        throw new ApiError(400,"username is missing")
+    }
+
+    const channel =  await User.aggregate([
+        {
+            $match :{
+                username : username?.toLowerCase()
+            }
+        },
+        {
+            $lookup :{
+                from : "subscriptions",
+                localField : "_id",
+                foreignField : "channel",
+                as :"subscribers"
+            }
+        },
+        {
+            $lookup :{
+                from : "subscriptions",
+                localField : "_id",
+                foreignField : "subscriber",
+                as :"subscribedTo"
+            }
+        },
+        {
+            $addFields:{
+                subscribersCount : {
+                    $size : "$subscribers"
+                },
+                channelsSubscribeToCount : {
+                    $size : "$subscribedTo"
+                },
+                isSubscribed : {
+                    $cond :{
+                        if : {$in : [req.user?._id, "$subscribers.subscriber"]},
+                        then : true,
+                        else : false
+                    }
+                }
+            }
+        },
+        {
+            $project : {
+                fullName : 1,
+                username : 1,
+                subscribersCount :1,
+                channelsSubscribeToCount : 1,
+                isSubscribed : 1,
+                avatar : 1,
+                email : 1,
+                coverImage : 1
+            }
+        }
+    ])
+
+    if(!channel?.length){
+        throw new ApiError(400 , "channel does not exists")
+    }
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse (200,channel[0],"user channel fetch successfully")
+    )
+})
+
+
+
+export { registerUser, loginUser, logoutUser,refreshAccessToken ,changePassword,getCurrentUser,updateAccountDetails,updateUserAvatar,updateUserCoverImg,getUserChannelProfile};
