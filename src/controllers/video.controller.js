@@ -6,9 +6,15 @@ import { ApiResponse } from "../utils/apiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
-
 const getAllVideos = asyncHandler(async (req, res) => {
-    const { page = 1, limit = 10, query = "", sortBy = "createdAt", sortType = 1, userId = "" } = req.query
+    const {
+        page = 1,
+        limit = 10,
+        query = "",
+        sortBy = "createdAt",
+        sortType = 1,
+        userId = "",
+    } = req.query;
 
     //TODO: get all videos based on query, sort, pagination
 
@@ -29,41 +35,38 @@ const getAllVideos = asyncHandler(async (req, res) => {
             },
         },
         {
-            $lookup:{
-                from : "users",
-                localField : "owner",
-                foreignField : "_id",
-                as : "owner",
-                pipeline : [
+            $lookup: {
+                from: "users",
+                localField: "owner",
+                foreignField: "_id",
+                as: "owner",
+                pipeline: [
                     {
-                        $project : {
-                            _id : 1,
-                            fullName : 1,
-                            avatar : 1,
-                            username : 1
-                        }
-                    }
-                ] 
-            }
+                        $project: {
+                            _id: 1,
+                            fullName: 1,
+                            avatar: 1,
+                            username: 1,
+                        },
+                    },
+                ],
+            },
         },
         {
-            $addFields : {
-                owner : {
-                    $first : "$owner"
-                }
-            }
+            $addFields: {
+                owner: {
+                    $first: "$owner",
+                },
+            },
         },
         {
             $sort: {
-                [sortBy]: parseInt(sortType)  
+                [sortBy]: parseInt(sortType),
             },
-        }
+        },
     ];
 
-    
-
     try {
-        
         // const options = {
         //     page : parseInt(page),
         //     limit : parseInt(limit),
@@ -73,26 +76,36 @@ const getAllVideos = asyncHandler(async (req, res) => {
         //     }
         // }
 
-        const options = {  // options for pagination
-            page: parseInt( page ),
-            limit: parseInt( limit ),
-            customLabels: {   // custom labels for pagination
+        const options = {
+            // options for pagination
+            page: parseInt(page),
+            limit: parseInt(limit),
+            customLabels: {
+                // custom labels for pagination
                 totalDocs: "totalVideos",
                 docs: "videos",
             },
         };
-        
+
         // const result = await Video.aggregatePaginate(Video.aggregate(pipeline),options);
-        const result = await Video.aggregatePaginate( Video.aggregate( pipeline ), options );
-        console.log("xxxxxxx")
-        if(!result?.videos?.length){
-            throw new ApiError(400,"No video found")
+        const result = await Video.aggregatePaginate(
+            Video.aggregate(pipeline),
+            options
+        );
+        console.log("xxxxxxx");
+        if (!result?.videos?.length) {
+            throw new ApiError(400, "No video found");
         }
 
-        return res.status(200).json(new ApiResponse(200,result,"Video Fetched successfully"))
-
+        return res
+            .status(200)
+            .json(new ApiResponse(200, result, "Video Fetched successfully"));
     } catch (error) {
-        throw new ApiError(500,error?.message||"Internal server error in video aggregation",error)
+        throw new ApiError(
+            500,
+            error?.message || "Internal server error in video aggregation",
+            error
+        );
     }
 });
 
@@ -148,10 +161,9 @@ const getVideoById = asyncHandler(async (req, res) => {
     const { videoId } = req.params;
     //TODO: get video by id
 
-    if(!videoId || !isValidObjectId(videoId)){
-        throw new ApiError(400 , "give video id")
+    if (!videoId || !isValidObjectId(videoId)) {
+        throw new ApiError(400, "give video id");
     }
-
 
     // const video = await Video.findById(videoId);
 
@@ -162,89 +174,94 @@ const getVideoById = asyncHandler(async (req, res) => {
     try {
         const video = await Video.aggregate([
             {
-                $match : {
-                    _id : new mongoose.Types.ObjectId(videoId)
-                }
+                $match: {
+                    _id: new mongoose.Types.ObjectId(videoId),
+                },
             },
             {
-                $lookup : {
-                    from : "users",
-                    localField : "owner",
-                    foreignField : "_id",
-                    as : "uploadedBy"
-                }
+                $lookup: {
+                    from: "users",
+                    localField: "owner",
+                    foreignField: "_id",
+                    as: "uploadedBy",
+                },
             },
             {
-                $unwind : "$uploadedBy"
+                $unwind: "$uploadedBy",
             },
             {
-                $lookup : {
-                    from : "likes",
-                    localField : "_id",
-                    foreignField : "video",
-                    as : "likes"
-                }
+                $lookup: {
+                    from: "likes",
+                    localField: "_id",
+                    foreignField: "video",
+                    as: "likes",
+                },
             },
             {
-                $lookup:{
-                    from:"subscribers",
-                    localField:"owner",
-                    foreignField:"channel",
-                    as:"subscribers"
-                }
+                $lookup: {
+                    from: "subscribers",
+                    localField: "owner",
+                    foreignField: "channel",
+                    as: "subscribers",
+                },
             },
             {
-                $addFields:{
-                    totalSubscribers:{
-                        $size:"$subscribers"
+                $addFields: {
+                    totalSubscribers: {
+                        $size: "$subscribers",
                     },
-                    isSubscriberd:{
-                        $cond:{
-                            if:{$in:[req.user._id,"$subscribers.subscriber"]},
-                            then:true,
-                            else:false
-                        }
+                    isSubscriberd: {
+                        $cond: {
+                            if: {
+                                $in: [req.user._id, "$subscribers.subscriber"],
+                            },
+                            then: true,
+                            else: false,
+                        },
                     },
-                    TotalLikes : {
-                        $size : "$likes"
+                    TotalLikes: {
+                        $size: "$likes",
                     },
-                    isLiked : {
-                        $cond : {
-                            if:{$in :  [req.user._id,"$likes.likeBy"]},
-                            then :true,
-                            else : false
-                        }
-                    }
-                }
+                    isLiked: {
+                        $cond: {
+                            if: { $in: [req.user._id, "$likes.likeBy"] },
+                            then: true,
+                            else: false,
+                        },
+                    },
+                },
             },
             {
-                $project:{
-                    title:1,
-                    description : 1,
-                    views:1,
-                    thumbnail:1,
-                    videoFile:1,
-                    uploadedBy:{
-                        fullName:1,
-                        username:1,
-                        avatar:1
+                $project: {
+                    title: 1,
+                    description: 1,
+                    views: 1,
+                    thumbnail: 1,
+                    videoFile: 1,
+                    uploadedBy: {
+                        fullName: 1,
+                        username: 1,
+                        avatar: 1,
                     },
-                    TotalLikes:1,
-                    isLiked:1,
-                    totalSubscribers:1,
-                    isSubscriberd:1
-                }
-            }
-        ])
-    
-        console.log(video)
-    
-    
+                    TotalLikes: 1,
+                    isLiked: 1,
+                    totalSubscribers: 1,
+                    isSubscriberd: 1,
+                },
+            },
+        ]);
+
+        console.log(video);
+
         return res
             .status(200)
             .json(new ApiResponse(200, video, "successfully get video"));
     } catch (error) {
-        throw new ApiError(400,error?.message||"Something went wrong",error)
+        throw new ApiError(
+            400,
+            error?.message || "Something went wrong",
+            error
+        );
     }
 });
 
