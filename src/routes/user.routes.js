@@ -17,7 +17,7 @@ import { verifyJWT } from "../middlewares/auth.middlewares.js";
 import { formParser } from '../middlewares/multer.middlewares.js';
 
 const router = Router();
-const formParser = multer().none();
+
 
 router.route("/register").post(
     upload.fields([
