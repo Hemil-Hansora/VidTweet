@@ -14,7 +14,7 @@ import {
 } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middlewares.js";
 import { verifyJWT } from "../middlewares/auth.middlewares.js";
-import multer from "multer";
+import { formParser } from '../middlewares/multer.middlewares.js';
 
 const router = Router();
 const formParser = multer().none();

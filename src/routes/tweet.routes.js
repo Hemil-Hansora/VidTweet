@@ -6,7 +6,7 @@ import {
     updateTweet,
 } from "../controllers/tweet.controller.js"
 import { verifyJWT } from "../middlewares/auth.middlewares.js";
-import multer from "multer";
+import { formParser } from '../middlewares/multer.middlewares.js';
 
 const router = Router();
 const formParser = multer().none();

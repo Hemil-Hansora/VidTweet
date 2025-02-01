@@ -9,5 +9,7 @@ const storage = multer.diskStorage({
       cb(null, file.originalname)
     }
   })
+
+export const formParser = multer().none();
   
 export const upload = multer({ storage })
