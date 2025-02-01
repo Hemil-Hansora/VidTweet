@@ -8,18 +8,19 @@ import {
     removeVideoFromPlaylist,
     updatePlaylist,
 } from "../controllers/playlist.controller.js"
-import {verifyJWT} from "../middlewares/auth.middleware.js"
+import { verifyJWT } from "../middlewares/auth.middlewares.js"; 
+import multer from "multer";
 
 const router = Router();
-
+const formParser = multer().none();
 router.use(verifyJWT); // Apply verifyJWT middleware to all routes in this file
 
-router.route("/").post(createPlaylist)
+router.route("/").post(formParser,createPlaylist)
 
 router
     .route("/:playlistId")
     .get(getPlaylistById)
-    .patch(updatePlaylist)
+    .patch(formParser, updatePlaylist)
     .delete(deletePlaylist);
 
 router.route("/add/:videoId/:playlistId").patch(addVideoToPlaylist);
